@@ -39,7 +39,7 @@ from summ_poc import retry
 
 warnings.filterwarnings("ignore", category=FutureWarning, module="transformers")
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
-OPENAI_API_KEY = "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"
+OPENAI_API_KEY = "sk-xxxxxxxxx"
 os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
 
 
