@@ -27,7 +27,7 @@ from langchain.text_splitter import CharacterTextSplitter
 
 from langchain.vectorstores.Chroma import Chroma
 from langchain.vectorstores.pinecone import Pinecone
-from langchain.document_loaders import PyPDFLoader
+from langchain.document_loaders import PyPDFLoader , Docx2txtLoader ,TextLoader
 
 from py_executable_checklist.workflow import WorkflowBase, run_command
 from pypdf import PdfReader
@@ -39,8 +39,9 @@ from summ_poc import retry
 
 warnings.filterwarnings("ignore", category=FutureWarning, module="transformers")
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
-OPENAI_API_KEY = "sk-xxxxxxxxx"
+OPENAI_API_KEY = "sk-xxxxxxxxxxxx"
 os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
+os.environ["HUGGINGFACEHUB_API_TOKEN"] = "hf_xxxxxxxxxxxx"
 
 
 def slugify_pdf_name(input_pdf_path: Path) -> str:
@@ -171,6 +172,51 @@ class ConvertPDFToText(WorkflowBase):
         return {"pages_text_path": output_dir}
 
 
+class ConvertDocsAndIndex(WorkflowBase):
+    """
+    Convert PDF to text using PyPDFLoader
+    """
+
+    input_pdf_path: Path
+    app_dir: Path
+    start_page: int
+    end_page: int
+
+    def execute(self) -> dict:
+        print(self.input_pdf_path)
+        
+        text = ""
+        
+        output_dir = output_directory_for_pdf(self.app_dir, self.input_pdf_path) / "scanned"
+        output_dir.mkdir(parents=True, exist_ok=True)        
+        text_path = output_dir
+                
+        documents = []
+        for file in os.listdir("D:\\Technical\\PythonProjects\\suj-content-summ\\src\\input"):
+            if file.endswith(".pdf"):
+                pdf_path = "D:\\Technical\\PythonProjects\\suj-content-summ\\src\\input\\" + file
+                loader = PyPDFLoader(pdf_path)
+                documents.extend(loader.load())
+            elif file.endswith('.docx') or file.endswith('.doc'):
+                doc_path = "D:\\Technical\\PythonProjects\\suj-content-summ\\src\\input\\" + file
+                loader = Docx2txtLoader(doc_path)
+                documents.extend(loader.load())
+            elif file.endswith('.txt'):
+                text_path = "D:\\Technical\\PythonProjects\\suj-content-summ\\src\\input\\" + file
+                loader = TextLoader(text_path)
+                documents.extend(loader.load())
+        
+        text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=10)
+        docs = text_splitter.split_documents(documents)
+        
+        vectordb = Chroma.from_documents(documents, embedding=OpenAIEmbeddings(), persist_directory="./data")
+        vectordb.persist()
+        
+        return {
+            "chunked_text_list": [t for t in docs if t],
+            "split_txt": docs
+        }
+    
 
 class CombineAllText(WorkflowBase):
     """
@@ -253,6 +299,8 @@ class CreateIndex(WorkflowBase):
         #docsearch: Pinecone = Pinecone.from_texts(pine_chunk_text, embeddings)  ###SUJAY 
         docsearch: Pinecone = Pinecone.from_texts(self.split_txt, embeddings)  ###SUJAY 
         #docsearch: Chroma = Chroma.from_texts(self.chunked_text_list[:2], embeddings)  
+        #vectordb = Chroma.from_documents(documents, embedding=OpenAIEmbeddings(), persist_directory="./data")
+        #vectordb.persist()
         
         for text in self.chunked_text_list[2:]:
             self.append_to_index(docsearch, text)
@@ -281,8 +329,9 @@ class LoadIndex(WorkflowBase):
 
         print(f"[bold]Loading[/bold] index from {self.faiss_db}")
         
-        index = Pinecone.read_index(self.index_path.as_posix())      #### SUJAY
+        #index = Pinecone.read_index(self.index_path.as_posix())      
         #index = faiss.read_index(self.index_path.as_posix())
+        index = Chroma.read_index(self.index_path.as_posix())  
         with open(self.faiss_db, "rb") as f:
             search_index = pickle.load(f)
 
@@ -346,6 +395,14 @@ def inference_workflow_steps() -> list:
         LoadIndex,
         AskQuestion,
     ]
+
+
+def training_workflow_steps() -> list:    
+    return [
+        VerifyInputFile,
+        ConvertDocsAndIndex,
+    ]
+
 
 
 def training_workflow_steps_suj() -> list:    
