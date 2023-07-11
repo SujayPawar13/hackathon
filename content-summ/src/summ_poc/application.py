@@ -12,6 +12,7 @@ from summ_poc import setup_logging
 from summ_poc.web import run_web
 from summ_poc.workflow import (
     workflow_steps,
+    training_workflow_steps,
     training_workflow_steps_suj,
     pre_process_workflow_steps_suj,
     inference_workflow_steps_suj
