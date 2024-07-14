@@ -17,3 +17,12 @@ pip install slug=="2.0"
 pip install sentence-transformers=="2.2.2"		
 pip install transformers=="4.26.0"
 
+### streamlit run next_sentence_generation.py
+python 3.9.x
+transformers==4.42.4
+tornado==6.4.1
+simpletrasnformers==0.70.1
+streamlit==1.36.0
+torch==2.3.1
+**** toenziers==0.19.1
+
