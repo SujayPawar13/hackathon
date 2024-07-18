@@ -21,8 +21,13 @@ pip install transformers=="4.26.0"
 python 3.9.x
 transformers==4.42.4
 tornado==6.4.1
-simpletrasnformers==0.70.1
+simpletransformers==0.70.1
 streamlit==1.36.0
 torch==2.3.1
-**** toenziers==0.19.1
+
+######## Speech to text ########
+speechrecognition==3.10.4
+pyaudio==0.2.14
+pyttsx3==3.2.90
+
 
