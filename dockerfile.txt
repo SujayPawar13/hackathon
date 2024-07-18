@@ -1,0 +1,17 @@
+FROM python:3.10
+
+# Expose port you want your app on
+EXPOSE 8187
+
+# Upgrade pip and install requirements
+COPY requirements.txt requirements.txt
+RUN pip install -U pip
+RUN pip install -r requirements.txt
+
+# Copy app code and set working directory
+COPY nxt_word_sentence_generator.py nxt_word_sentence_generator.py
+
+WORKDIR .
+
+# Run
+ENTRYPOINT [“streamlit”, “run”, “nxt_word_sentence_generator.py”, “–server.port=8180”, “–server.address=0.0.0.0”]
